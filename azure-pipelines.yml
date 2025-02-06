@@ -16,7 +16,7 @@ stages:
         backendAzureRmResourceGroupName: 'tfvmex-resources1'
         backendAzureRmStorageAccountName: 'azurebackendstorage'
         backendAzureRmContainerName: 'backend'
-        backendAzureRmKey: '$(key)'
+        backendAzureRmKey: 'test1.prod.terraform.tfstate'
     - task: TerraformTaskV4@4
       displayName: TF Validate
       inputs:
