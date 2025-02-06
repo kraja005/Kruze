@@ -1,0 +1,64 @@
+trigger: none
+
+stages:
+- stage: Build
+  jobs:
+  - job: Build
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - task: TerraformTaskV4@4
+      displayName: TF Init
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: 'Azure subscription 1(f3b12140-adfe-4756-abd0-e9b578f345a5)'
+        backendAzureRmResourceGroupName: 'tfvmex-resources1'
+        backendAzureRmStorageAccountName: 'azurebackendstorage'
+        backendAzureRmContainerName: 'backend'
+        backendAzureRmKey: 'prod.terraform.tfstate'
+    - task: TerraformTaskV4@4
+      displayName: TF Validate
+      inputs:
+        provider: 'azurerm'
+        command: 'validate'
+    - task: TerraformTaskV4@4
+      displayName: TF Format
+      inputs:
+        provider: 'azurerm'
+        command: 'custom'
+        outputTo: 'console'
+        customCommand: 'fmt'
+        environmentServiceNameAzureRM: 'Azure subscription 1(f3b12140-adfe-4756-abd0-e9b578f345a5)'
+    - task: TerraformTaskV4@4
+      enabled: false
+      displayName: TF Plan
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        environmentServiceNameAzureRM: 'Azure subscription 1(f3b12140-adfe-4756-abd0-e9b578f345a5)'
+    - task: ArchiveFiles@2
+      displayName: Archieve Files
+      enabled: false
+      inputs:
+        rootFolderOrFile: '$(Build.SourcesDirectory)/'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        replaceExistingArchive: true
+    - task: PublishBuildArtifacts@1
+      enabled: false
+      displayName: Publish Artifact
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: '$(Build.BuildId)-build'
+        publishLocation: 'Container'
+    - task: TerraformTaskV4@4
+      displayName: Terraform apply
+      inputs:
+        command: apply
+        workingDirectory: '$(System.DefaultWorkingDirectory)/'
+        commandOptions: '--auto-approve'
+        environmentServiceNameAzureRM: 'Azure subscription 1(f3b12140-adfe-4756-abd0-e9b578f345a5)'
+        backendAzureRmUseEnvironmentVariablesForAuthentication: false
+        backendAzureRmUseEntraIdForAuthentication: false
